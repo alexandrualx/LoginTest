@@ -1,0 +1,219 @@
+﻿@{
+    ViewBag.Title = "Login Test";
+}
+
+@model LoginTest.Models.Home
+
+@using (Html.BeginForm("Index", "Home", FormMethod.Post, new { @id = "frmHome", @class = "form-horizontal", role = "form" }))
+{
+    @Html.AntiForgeryToken()
+    <table class="table-responsive" style="width:100%">
+        <tr>
+            <td colspan="3">
+                @Html.Label("Authentification", new { @class = "col-md-2 control-label", @style = "width:12em;font-size:large" })
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <br />
+            </td>
+        </tr>
+        <tr>
+            <td style="width:20%">
+                @Html.Label("User ID : ", new { @class = "col-md-2 control-label", @style = "width:12em" })
+            </td>
+            <td style="width:20%">
+                @Html.TextBoxFor(x => x.UserID, new { @class = "form-control", @style = "width:12em", @value = "" })
+            </td>
+            <td style="width:60%"></td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <br />
+            </td>
+        </tr>
+        <tr>
+            <td style="width:20%">
+                @Html.Label("Password : ", new { @class = "col-md-2 control-label", @style = "width:12em" })
+            </td>
+            <td style="width:20%">
+                @Html.TextBoxFor(x => x.Password, new { @class = "form-control", @style = "width:12em", @disabled = "disabled" })
+            </td>
+            <td style="width:60%"></td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <br />
+            </td>
+        </tr>
+        <tr>
+            <td style="width:20%">
+                @Html.Label("Remaining Time : ", new { @class = "col-md-2 control-label", @style = "width:12em" })
+            </td>
+            <td style="width:20%">
+                @Html.TextBoxFor(x => x.RemainingTime, new { @class = "form-control", @style = "width:12em", @disabled = "disabled" })
+            </td>
+            <td style="width:60%"></td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <br />
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <button type="submit" class="btn btn-default" style="width:12em">Generate Password</button>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <br />
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <button type="button" id="btnCheckPassword" class="btn btn-default" style="width:12em">Check Password</button>
+            </td>
+        </tr>
+    </table>
+}
+
+<script>
+    $(document).ready(function (event)
+    {
+        let UserID = parseInt(@Model.UserID);
+        let Password = "@Model.Password";
+        let Message = "@Model.Message";
+
+        if (UserID > 0 && Password != "" && Message == "")
+        {
+            $("#Password").val(Password);
+        }
+
+        if (UserID > 0 && Password != "" && Message == "")
+        {
+            GetRemainingTime(UserID);
+            setInterval(function ()
+            {
+                GetRemainingTime(UserID);
+            }, 1000);
+        }
+
+        if (isNaN(UserID) == true)
+        {
+            $("#RemainingTime").val("");
+        }
+
+        if (Message != "")
+        {
+            alert(Message);
+        }
+
+    })
+</script>
+
+<script>
+    $("#btnCheckPassword").click(function (event)
+    {
+        let UserID = parseInt(@Model.UserID);
+        if (isNaN(UserID) == false)
+        {
+            if (UserID > 0)
+            {
+                let Password = prompt("Check password");
+                if (Password != "")
+                {
+                    CheckPassword(UserID, Password);
+                }
+            }
+        }
+        else
+        {
+            alert("Missing User ID");
+        }
+    })
+</script>
+
+<script>
+    function GetRemainingTime(UserID)
+    {
+        $.ajax(
+        {
+            type: 'POST',
+            url: '@Url.Action("GetRemainingTime")',
+            data:
+            ({
+                UserID: UserID
+            }),
+            async: true,
+            success: function (data)
+            {
+                if (data.Result == 'OK')
+                {
+                    if (data.RemainingTime != null)
+                    {
+                        if (data.RemainingTime > 0)
+                        {
+                            $("#RemainingTime").val(data.RemainingTime);
+                        }
+                        else
+                        {
+                            $("#UserID").val("");
+                            $("#frmHome").submit();
+                        }
+                    }
+                }
+                else if (data.Result == 'ERROR')
+                {
+                    let ErrorMessage = data.Message;
+                }
+            },
+            error: function (err)
+            {
+                let ErrorMessage = err.statusText;
+            }
+        });
+    }
+</script>
+
+<script>
+    function CheckPassword(UserID,Password)
+    {
+        $.ajax(
+        {
+            type: 'POST',
+            url: '@Url.Action("CheckPassword")',
+            data:
+            ({
+                UserID: UserID,
+                Password: Password
+            }),
+            async: true,
+            success: function (data)
+            {
+                if (data.Result == 'OK')
+                {
+                    if (data.ValidPassword != null)
+                    {
+                        if (data.ValidPassword == true)
+                        {
+                            alert("Valid password");
+                        }
+                        else
+                        {
+                            alert("Invalid password");
+                        }
+                    }
+                }
+                else if (data.Result == 'ERROR')
+                {
+                    let ErrorMessage = data.Message;
+                }
+            },
+            error: function (err)
+            {
+                let ErrorMessage = err.statusText;
+            }
+        });
+    }
+</script>
